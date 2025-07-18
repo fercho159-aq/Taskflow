@@ -11,27 +11,46 @@ import initialResolvedTasks from '@/data/resolved-tasks.json';
 import initialClients from '@/data/clients.json';
 import { ClientEntryForm } from './ClientEntryForm';
 
-const initialPeople: Omit<Person, 'tasks' | 'totalHours'>[] = [
+const initialPeopleData: Omit<Person, 'tasks' | 'totalHours'>[] = [
   { id: '1', name: 'Omar', clientIds: ['client-1', 'client-2'] },
   { id: '2', name: 'Fernando', clientIds: ['client-3'] },
   { id: '3', name: 'Julio', clientIds: ['client-1', 'client-4'] },
 ];
 
+const getInitialState = <T,>(key: string, defaultValue: T): T => {
+  if (typeof window === 'undefined') {
+    return defaultValue;
+  }
+  try {
+    const item = window.localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.warn(`Error reading localStorage key "${key}":`, error);
+    return defaultValue;
+  }
+};
+
 export function TaskAllocator() {
-  const [people, setPeople] = useState<Person[]>(initialPeople.map(p => ({...p, tasks: [], totalHours: 0})));
-  const [clients, setClients] = useState<Client[]>(initialClients);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // This effect runs only once on the client to initialize the state
-    if (!isInitialized) {
-      const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
-      const clientMap = new Map(clients.map(c => [c.id, c.name]));
+    // Initialize state from localStorage or fallback to JSON files
+    const storedPeople = getInitialState<Person[] | null>('task-allocator-people', null);
+    const storedClients = getInitialState<Client[] | null>('task-allocator-clients', null);
 
-      let currentPeople = initialPeople.map(p => ({ ...p, tasks: [], totalHours: 0 }));
+    if (storedPeople && storedClients) {
+      setPeople(storedPeople);
+      setClients(storedClients);
+    } else {
+      // First time load, initialize from JSON
+      const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
+      const clientMap = new Map(initialClients.map(c => [c.id, c.name]));
+
+      let currentPeople = initialPeopleData.map(p => ({ ...p, tasks: [], totalHours: 0 }));
 
       allTasks.forEach((task, index) => {
-        // Simple round-robin assignment for initial load
         const personIndex = index % currentPeople.length;
         const taskWithClientName = {
           ...task,
@@ -42,11 +61,24 @@ export function TaskAllocator() {
           currentPeople[personIndex].totalHours += task.duration;
         }
       });
-      
       setPeople(currentPeople);
-      setIsInitialized(true);
+      setClients(initialClients);
     }
-  }, [isInitialized, clients]);
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    // Persist state to localStorage whenever it changes
+    if (isInitialized) {
+      try {
+        window.localStorage.setItem('task-allocator-people', JSON.stringify(people));
+        window.localStorage.setItem('task-allocator-clients', JSON.stringify(clients));
+      } catch (error) {
+        console.error('Error saving state to localStorage:', error);
+      }
+    }
+  }, [people, clients, isInitialized]);
+
 
   const handleAddClient = (clientName: string) => {
     const newClient: Client = {
@@ -57,7 +89,6 @@ export function TaskAllocator() {
   };
 
   const handleAddTask = (taskDescription: string, taskDuration: number, tags: ('New Client' | 'Maintenance')[] , clientId?: string) => {
-    // Find person with the least workload (only considering active tasks)
     const personWithLeastWorkload = [...people].sort(
       (a, b) => a.totalHours - b.totalHours
     )[0];
@@ -120,6 +151,14 @@ export function TaskAllocator() {
   const availableClientsForNewTask = personWithLeastWorkload 
     ? clients.filter(client => personWithLeastWorkload.clientIds.includes(client.id))
     : clients;
+    
+  if (!isInitialized) {
+      return (
+        <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 flex items-center justify-center">
+            <p>Loading...</p>
+        </div>
+      );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
