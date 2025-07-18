@@ -1,8 +1,15 @@
+export interface Client {
+  id: string;
+  name: string;
+}
+
 export interface Task {
   id: string;
   description: string;
   duration: number; // in hours
   isCompleted: boolean;
+  clientId?: string;
+  clientName?: string;
 }
 
 export interface Person {
@@ -10,4 +17,5 @@ export interface Person {
   name: string;
   tasks: Task[];
   totalHours: number;
+  clientIds: string[];
 }

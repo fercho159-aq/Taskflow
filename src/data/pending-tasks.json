@@ -1,6 +1,6 @@
 
 [
-  { "id": "task-1", "description": "Deploy the new website to production", "duration": 4, "isCompleted": false },
-  { "id": "task-2", "description": "Update the user documentation", "duration": 2.5, "isCompleted": false },
-  { "id": "task-3", "description": "Fix the login page bug", "duration": 1.5, "isCompleted": false }
+  { "id": "task-1", "description": "Deploy the new website to production", "duration": 4, "isCompleted": false, "clientId": "client-1" },
+  { "id": "task-2", "description": "Update the user documentation", "duration": 2.5, "isCompleted": false, "clientId": "client-3" },
+  { "id": "task-3", "description": "Fix the login page bug", "duration": 1.5, "isCompleted": false, "clientId": "client-2" }
 ]

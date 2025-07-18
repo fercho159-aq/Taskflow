@@ -1,34 +1,42 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Person, Task } from '@/lib/types';
+import type { Person, Task, Client } from '@/lib/types';
 import { TaskEntryForm } from './TaskEntryForm';
 import { WorkloadDashboard } from './WorkloadDashboard';
 import { TaskColumns } from './TaskColumns';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import initialPendingTasks from '@/data/pending-tasks.json';
 import initialResolvedTasks from '@/data/resolved-tasks.json';
+import initialClients from '@/data/clients.json';
 
-const initialPeople: Person[] = [
-  { id: '1', name: 'Omar', tasks: [], totalHours: 0 },
-  { id: '2', name: 'Fernando', tasks: [], totalHours: 0 },
-  { id: '3', name: 'Julio', tasks: [], totalHours: 0 },
+const initialPeople: Omit<Person, 'tasks' | 'totalHours'>[] = [
+  { id: '1', name: 'Omar', clientIds: ['client-1', 'client-2'] },
+  { id: '2', name: 'Fernando', clientIds: ['client-3'] },
+  { id: '3', name: 'Julio', clientIds: ['client-1', 'client-4'] },
 ];
 
 export function TaskAllocator() {
-  const [people, setPeople] = useState<Person[]>(initialPeople);
+  const [people, setPeople] = useState<Person[]>(initialPeople.map(p => ({...p, tasks: [], totalHours: 0})));
+  const [clients, setClients] = useState<Client[]>(initialClients);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     // This effect runs only once on the client to initialize the state
     if (!isInitialized) {
-      const allTasks = [...initialPendingTasks, ...initialResolvedTasks];
-      let currentPeople = [...initialPeople].map(p => ({ ...p, tasks: [], totalHours: 0 }));
+      const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
+      const clientMap = new Map(clients.map(c => [c.id, c.name]));
+
+      let currentPeople = initialPeople.map(p => ({ ...p, tasks: [], totalHours: 0 }));
 
       allTasks.forEach((task, index) => {
         // Simple round-robin assignment for initial load
         const personIndex = index % currentPeople.length;
-        currentPeople[personIndex].tasks.push({ ...task });
+        const taskWithClientName = {
+          ...task,
+          clientName: task.clientId ? clientMap.get(task.clientId) : undefined,
+        };
+        currentPeople[personIndex].tasks.push(taskWithClientName);
         if (!task.isCompleted) {
           currentPeople[personIndex].totalHours += task.duration;
         }
@@ -37,19 +45,23 @@ export function TaskAllocator() {
       setPeople(currentPeople);
       setIsInitialized(true);
     }
-  }, [isInitialized]);
+  }, [isInitialized, clients]);
 
-  const handleAddTask = (taskDescription: string, taskDuration: number) => {
+  const handleAddTask = (taskDescription: string, taskDuration: number, clientId?: string) => {
     // Find person with the least workload (only considering active tasks)
     const personWithLeastWorkload = [...people].sort(
       (a, b) => a.totalHours - b.totalHours
     )[0];
+
+    const clientName = clientId ? clients.find(c => c.id === clientId)?.name : undefined;
 
     const newTask: Task = {
       id: crypto.randomUUID(),
       description: taskDescription,
       duration: taskDuration,
       isCompleted: false,
+      clientId,
+      clientName,
     };
 
     setPeople((currentPeople) =>
@@ -91,6 +103,14 @@ export function TaskAllocator() {
     );
   };
 
+  const personWithLeastWorkload = people.length > 0 ? [...people].sort(
+      (a, b) => a.totalHours - b.totalHours
+    )[0] : null;
+
+  const availableClientsForNewTask = personWithLeastWorkload 
+    ? clients.filter(client => personWithLeastWorkload.clientIds.includes(client.id))
+    : [];
+
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -105,7 +125,7 @@ export function TaskAllocator() {
               <CardTitle>Add a New Task</CardTitle>
             </CardHeader>
             <CardContent>
-              <TaskEntryForm onAddTask={handleAddTask} />
+              <TaskEntryForm onAddTask={handleAddTask} clients={availableClientsForNewTask} />
             </CardContent>
           </Card>
 

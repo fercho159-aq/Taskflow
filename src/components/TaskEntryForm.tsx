@@ -6,34 +6,39 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle } from 'lucide-react';
+import type { Client } from '@/lib/types';
 
 const formSchema = z.object({
   description: z.string().min(1, 'Task description is required.'),
   duration: z.coerce.number().min(0.1, 'Duration must be at least 0.1 hours.'),
+  clientId: z.string().optional(),
 });
 
 interface TaskEntryFormProps {
-  onAddTask: (description: string, duration: number) => void;
+  onAddTask: (description: string, duration: number, clientId?: string) => void;
+  clients: Client[];
 }
 
-export function TaskEntryForm({ onAddTask }: TaskEntryFormProps) {
+export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: '',
       duration: 1,
+      clientId: '',
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddTask(values.description, values.duration);
+    onAddTask(values.description, values.duration, values.clientId);
     form.reset();
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <FormField
           control={form.control}
           name="description"
@@ -43,6 +48,31 @@ export function TaskEntryForm({ onAddTask }: TaskEntryFormProps) {
               <FormControl>
                 <Input placeholder="e.g., Design the new landing page" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="clientId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Client</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a client" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -60,7 +90,7 @@ export function TaskEntryForm({ onAddTask }: TaskEntryFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" className="md:col-start-3 w-full">
+        <Button type="submit" className="md:col-start-4 w-full">
           <PlusCircle className="mr-2 h-4 w-4" /> Add & Assign Task
         </Button>
       </form>
