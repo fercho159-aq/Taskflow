@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import initialPendingTasks from '@/data/pending-tasks.json';
 import initialResolvedTasks from '@/data/resolved-tasks.json';
 import initialClients from '@/data/clients.json';
+import { ClientEntryForm } from './ClientEntryForm';
 
 const initialPeople: Omit<Person, 'tasks' | 'totalHours'>[] = [
   { id: '1', name: 'Omar', clientIds: ['client-1', 'client-2'] },
@@ -47,7 +48,15 @@ export function TaskAllocator() {
     }
   }, [isInitialized, clients]);
 
-  const handleAddTask = (taskDescription: string, taskDuration: number, clientId?: string) => {
+  const handleAddClient = (clientName: string) => {
+    const newClient: Client = {
+      id: `client-${crypto.randomUUID()}`,
+      name: clientName,
+    };
+    setClients(currentClients => [...currentClients, newClient]);
+  };
+
+  const handleAddTask = (taskDescription: string, taskDuration: number, tags: ('New Client' | 'Maintenance')[] , clientId?: string) => {
     // Find person with the least workload (only considering active tasks)
     const personWithLeastWorkload = [...people].sort(
       (a, b) => a.totalHours - b.totalHours
@@ -62,6 +71,7 @@ export function TaskAllocator() {
       isCompleted: false,
       clientId,
       clientName,
+      tags,
     };
 
     setPeople((currentPeople) =>
@@ -109,7 +119,7 @@ export function TaskAllocator() {
 
   const availableClientsForNewTask = personWithLeastWorkload 
     ? clients.filter(client => personWithLeastWorkload.clientIds.includes(client.id))
-    : [];
+    : clients;
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
@@ -120,14 +130,24 @@ export function TaskAllocator() {
         </header>
 
         <main className="space-y-8">
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Add a New Task</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TaskEntryForm onAddTask={handleAddTask} clients={availableClientsForNewTask} />
-            </CardContent>
-          </Card>
+          <div className="grid md:grid-cols-2 gap-8">
+             <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Add a New Client</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ClientEntryForm onAddClient={handleAddClient} />
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Add a New Task</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TaskEntryForm onAddTask={handleAddTask} clients={availableClientsForNewTask} />
+              </CardContent>
+            </Card>
+          </div>
 
           <WorkloadDashboard people={people} />
 

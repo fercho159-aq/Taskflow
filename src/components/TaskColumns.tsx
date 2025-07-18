@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Tag } from 'lucide-react';
 
 interface TaskColumnsProps {
   people: Person[];
@@ -47,12 +47,20 @@ export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
                                 >
                                   {task.description}
                                 </label>
-                                {task.clientName && (
-                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                                      <Briefcase className="h-3 w-3" />
-                                      <span>{task.clientName}</span>
-                                    </div>
-                                )}
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  {task.clientName && (
+                                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                        <Briefcase className="h-3 w-3" />
+                                        <span>{task.clientName}</span>
+                                      </div>
+                                  )}
+                                  {task.tags?.map(tag => (
+                                      <Badge key={tag} variant={tag === 'New Client' ? 'default' : 'secondary'} className="text-xs">
+                                          <Tag className="h-3 w-3 mr-1" />
+                                          {tag}
+                                      </Badge>
+                                  ))}
+                                </div>
                                 </div>
                               </div>
                             <Badge variant={task.isCompleted ? "secondary" : "default"} className="bg-accent text-accent-foreground hover:bg-accent/90 shrink-0 whitespace-nowrap">

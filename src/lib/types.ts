@@ -10,6 +10,7 @@ export interface Task {
   isCompleted: boolean;
   clientId?: string;
   clientName?: string;
+  tags?: ('New Client' | 'Maintenance')[];
 }
 
 export interface Person {
