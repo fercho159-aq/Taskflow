@@ -25,7 +25,7 @@ const getInitialState = <T,>(key: string, defaultValue: T): T => {
     const item = window.localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
   } catch (error) {
-    console.warn(`Error reading localStorage key "${key}":`, error);
+    console.warn(`Error al leer la clave de localStorage "${key}":`, error);
     return defaultValue;
   }
 };
@@ -74,7 +74,7 @@ export function TaskAllocator() {
         window.localStorage.setItem('task-allocator-people', JSON.stringify(people));
         window.localStorage.setItem('task-allocator-clients', JSON.stringify(clients));
       } catch (error) {
-        console.error('Error saving state to localStorage:', error);
+        console.error('Error al guardar el estado en localStorage:', error);
       }
     }
   }, [people, clients, isInitialized]);
@@ -147,7 +147,7 @@ export function TaskAllocator() {
   if (!isInitialized) {
       return (
         <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8 flex items-center justify-center">
-            <p>Loading...</p>
+            <p>Cargando...</p>
         </div>
       );
   }
@@ -157,14 +157,14 @@ export function TaskAllocator() {
       <div className="max-w-7xl mx-auto space-y-8">
         <header className="text-center">
           <h1 className="text-4xl font-bold font-headline" style={{ color: 'hsl(var(--primary))' }}>TaskFlow Allocator</h1>
-          <p className="text-muted-foreground mt-2">Intelligently assign tasks based on workload.</p>
+          <p className="text-muted-foreground mt-2">Asigna tareas de forma inteligente según la carga de trabajo.</p>
         </header>
 
         <main className="space-y-8">
           <div className="grid md:grid-cols-2 gap-8">
              <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle>Add a New Client</CardTitle>
+                <CardTitle>Añadir un Nuevo Cliente</CardTitle>
               </CardHeader>
               <CardContent>
                 <ClientEntryForm onAddClient={handleAddClient} />
@@ -172,7 +172,7 @@ export function TaskAllocator() {
             </Card>
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle>Add a New Task</CardTitle>
+                <CardTitle>Añadir una Nueva Tarea</CardTitle>
               </CardHeader>
               <CardContent>
                 <TaskEntryForm onAddTask={handleAddTask} clients={clients} />

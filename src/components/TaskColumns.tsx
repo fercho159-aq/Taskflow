@@ -11,16 +11,21 @@ interface TaskColumnsProps {
   onToggleTask: (personId: string, taskId: string) => void;
 }
 
+const tagTranslations: Record<'New Client' | 'Maintenance', string> = {
+    'New Client': 'Cliente Nuevo',
+    'Maintenance': 'Mantenimiento'
+}
+
 export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
   return (
     <div>
-      <h2 className="text-2xl font-bold font-headline mb-4">Assigned Tasks</h2>
+      <h2 className="text-2xl font-bold font-headline mb-4">Tareas Asignadas</h2>
       <div className="grid gap-6 md:grid-cols-3">
         {people.map((person) => (
           <Card key={person.id} className="flex flex-col shadow-md">
             <CardHeader>
-              <CardTitle>{person.name}'s Tasks</CardTitle>
-              <CardDescription>Active Workload: {person.totalHours.toFixed(1)} hours</CardDescription>
+              <CardTitle>Tareas de {person.name}</CardTitle>
+              <CardDescription>Carga de trabajo activa: {person.totalHours.toFixed(1)} horas</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
               <ScrollArea className="h-72 w-full">
@@ -38,7 +43,7 @@ export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
                                   className="mt-1"
                                   checked={task.isCompleted}
                                   onCheckedChange={() => onToggleTask(person.id, task.id)}
-                                  aria-label="Mark task as complete"
+                                  aria-label="Marcar tarea como completada"
                                 />
                                 <div className="flex-1">
                                 <label
@@ -57,7 +62,7 @@ export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
                                   {task.tags?.map(tag => (
                                       <Badge key={tag} variant={tag === 'New Client' ? 'default' : 'secondary'} className="text-xs">
                                           <Tag className="h-3 w-3 mr-1" />
-                                          {tag}
+                                          {tagTranslations[tag]}
                                       </Badge>
                                   ))}
                                 </div>
@@ -72,7 +77,7 @@ export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
                     ))
                   ) : (
                     <div className="flex items-center justify-center h-full text-muted-foreground rounded-lg border-2 border-dashed h-60">
-                      <p>No tasks assigned yet.</p>
+                      <p>Aún no hay tareas asignadas.</p>
                     </div>
                   )}
                 </div>

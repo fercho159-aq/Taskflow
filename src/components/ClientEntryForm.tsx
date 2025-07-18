@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { UserPlus } from 'lucide-react';
 
 const formSchema = z.object({
-  clientName: z.string().min(1, 'Client name is required.'),
+  clientName: z.string().min(1, 'El nombre del cliente es requerido.'),
 });
 
 interface ClientEntryFormProps {
@@ -37,16 +37,16 @@ export function ClientEntryForm({ onAddClient }: ClientEntryFormProps) {
           name="clientName"
           render={({ field }) => (
             <FormItem className="flex-grow">
-              <FormLabel>Client Name</FormLabel>
+              <FormLabel>Nombre del Cliente</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Futura Designs" {...field} />
+                <Input placeholder="p. ej., Diseños Futura" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit">
-          <UserPlus className="mr-2 h-4 w-4" /> Add Client
+          <UserPlus className="mr-2 h-4 w-4" /> Añadir Cliente
         </Button>
       </form>
     </Form>

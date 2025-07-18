@@ -13,10 +13,11 @@ export function WorkloadDashboard({ people }: WorkloadDashboardProps) {
   
   return (
     <div>
-      <h2 className="text-2xl font-bold font-headline mb-4">Workload Dashboard</h2>
+      <h2 className="text-2xl font-bold font-headline mb-4">Panel de Carga de Trabajo</h2>
       <div className="grid gap-4 md:grid-cols-3">
         {people.map((person) => {
           const activeTasksCount = getActiveTasksCount(person);
+          const taskText = activeTasksCount !== 1 ? 's' : '';
           return (
             <Card key={person.id} className="shadow-md hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -25,10 +26,10 @@ export function WorkloadDashboard({ people }: WorkloadDashboardProps) {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {person.totalHours.toFixed(1)} hours
+                  {person.totalHours.toFixed(1)} horas
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {activeTasksCount} active task{activeTasksCount !== 1 ? 's' : ''} assigned
+                  {activeTasksCount} tarea{taskText} activa{taskText} asignada{taskText}
                 </p>
               </CardContent>
             </Card>

@@ -14,8 +14,8 @@ import type { Client } from '@/lib/types';
 const tags = [{id: 'New Client', label: 'Cliente Nuevo'}, {id: 'Maintenance', label: 'Mantenimiento'}] as const;
 
 const formSchema = z.object({
-  description: z.string().min(1, 'Task description is required.'),
-  duration: z.coerce.number().min(0.1, 'Duration must be at least 0.1 hours.'),
+  description: z.string().min(1, 'La descripción de la tarea es requerida.'),
+  duration: z.coerce.number().min(0.1, 'La duración debe ser de al menos 0.1 horas.'),
   clientId: z.string().optional(),
   tags: z.array(z.string()).optional(),
 });
@@ -54,9 +54,9 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
             name="description"
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel>Task Description</FormLabel>
+                <FormLabel>Descripción de la Tarea</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Design the new landing page" {...field} />
+                  <Input placeholder="p. ej., Diseñar la nueva página de inicio" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -67,15 +67,15 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
             name="clientId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Client</FormLabel>
+                <FormLabel>Cliente</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a client" />
+                        <SelectValue placeholder="Selecciona un cliente" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value={NONE_VALUE}>None</SelectItem>
+                      <SelectItem value={NONE_VALUE}>Ninguno</SelectItem>
                       {clients.map(client => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
@@ -92,9 +92,9 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
             name="duration"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Duration (hours)</FormLabel>
+                <FormLabel>Duración (horas)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.5" placeholder="e.g., 2.5" {...field} />
+                  <Input type="number" step="0.5" placeholder="p. ej., 2.5" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -107,9 +107,9 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
           render={() => (
             <FormItem>
               <div className="mb-4">
-                <FormLabel className="text-base">Tags</FormLabel>
+                <FormLabel className="text-base">Etiquetas</FormLabel>
                 <FormDescription>
-                  Select the tags for this task.
+                  Selecciona las etiquetas para esta tarea.
                 </FormDescription>
               </div>
               <div className="flex items-center space-x-4">
@@ -152,7 +152,7 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
           )}
         />
         <Button type="submit" className="w-full">
-          <PlusCircle className="mr-2 h-4 w-4" /> Add & Assign Task
+          <PlusCircle className="mr-2 h-4 w-4" /> Añadir y Asignar Tarea
         </Button>
       </form>
     </Form>
