@@ -11,6 +11,7 @@ import initialPendingTasks from '@/data/pending-tasks.json';
 import initialResolvedTasks from '@/data/resolved-tasks.json';
 import initialClients from '@/data/clients.json';
 import { ClientEntryForm } from './ClientEntryForm';
+import { useToast } from '@/hooks/use-toast';
 
 const initialPeopleData: Omit<Person, 'tasks' | 'totalHours'>[] = [
   { id: '1', name: 'Omar', clientIds: ['client-1', 'client-2'] },
@@ -35,6 +36,7 @@ export function TaskAllocator() {
   const [people, setPeople] = useState<Person[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Initialize state from API or fallback to JSON files
@@ -89,8 +91,11 @@ export function TaskAllocator() {
           console.log('Datos guardados exitosamente');
         } catch (error) {
           console.error('Error al guardar el estado en la API:', error);
-          // Mostrar el error al usuario
-          alert('Error al guardar los cambios. Por favor, intenta de nuevo.');
+          toast({
+            title: 'Error al guardar',
+            description: 'No se pudo guardar el estado en la API. Por favor, revisa tu conexión o contacta al administrador.',
+            variant: 'destructive',
+          });
         }
       };
       saveToApi();

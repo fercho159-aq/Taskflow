@@ -35,6 +35,14 @@ export const handler: Handler = async (event) => {
       }
     }
 
+    if (!process.env.NETLIFY_BLOBS_TOKEN) {
+      console.error('Falta la variable de entorno NETLIFY_BLOBS_TOKEN');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Falta la variable de entorno NETLIFY_BLOBS_TOKEN' }),
+      }
+    }
+
     const store = getStore({
       name: 'taskflow',
       token: process.env.NETLIFY_BLOBS_TOKEN
@@ -88,7 +96,8 @@ export const handler: Handler = async (event) => {
         console.log('Processing data:', {
           userId,
           dataType: typeof jsonData,
-          dataLength: jsonData.length
+          dataLength: jsonData.length,
+          tokenPresent: !!process.env.NETLIFY_BLOBS_TOKEN
         })
 
         // Store as a text string instead of Blob
@@ -108,7 +117,8 @@ export const handler: Handler = async (event) => {
         console.error('Error saving data:', {
           error: error.message,
           userId,
-          stack: error.stack
+          stack: error.stack,
+          tokenPresent: !!process.env.NETLIFY_BLOBS_TOKEN
         })
         
         return {
