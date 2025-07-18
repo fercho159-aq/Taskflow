@@ -1,7 +1,5 @@
 import { Handler } from '@netlify/functions'
-import { getKVStore } from '@netlify/blobs'
-
-const store = getKVStore('taskflow')
+import { getStore } from '@netlify/blobs'
 
 export const handler: Handler = async (event) => {
   try {
@@ -13,17 +11,31 @@ export const handler: Handler = async (event) => {
       }
     }
 
+    const store = getStore({
+      name: 'taskflow',
+      token: process.env.NETLIFY_BLOBS_TOKEN
+    })
+
     if (event.httpMethod === 'GET') {
-      const data = await store.get(`data-${userId}`)
-      return {
-        statusCode: 200,
-        body: JSON.stringify(data || { people: [], clients: [] }),
+      try {
+        const result = await store.get(`data-${userId}`)
+        const data = result ? JSON.parse(result.toString()) : { people: [], clients: [] }
+        return {
+          statusCode: 200,
+          body: JSON.stringify(data),
+        }
+      } catch (error) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ people: [], clients: [] }),
+        }
       }
     }
 
     if (event.httpMethod === 'POST' && event.body) {
-      const data = JSON.parse(event.body)
-      await store.set(`data-${userId}`, data)
+      const data = event.body
+      const blob = new Blob([data], { type: 'application/json' })
+      await store.set(`data-${userId}`, blob)
       return {
         statusCode: 200,
         body: JSON.stringify({ success: true }),
