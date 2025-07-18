@@ -1,145 +1,94 @@
 import { Handler } from '@netlify/functions'
-import { getStore } from '@netlify/blobs'
+import * as fs from 'fs'
+import * as path from 'path'
 
-interface ErrorWithMessage {
-  message: string;
-  stack?: string;
-}
+const DATA_DIR = path.join('/tmp', 'taskflow-data')
 
-function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  )
-}
-
-function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
-  if (isErrorWithMessage(maybeError)) return maybeError
-
-  try {
-    return new Error(JSON.stringify(maybeError))
-  } catch {
-    return new Error(String(maybeError))
-  }
+// Asegurarse de que el directorio existe
+try {
+  fs.mkdirSync(DATA_DIR, { recursive: true })
+} catch (error) {
+  console.error('Error creating data directory:', error)
 }
 
 export const handler: Handler = async (event) => {
   try {
-    const userId = event.headers['x-user-id']
-    if (!userId) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'User ID is required' }),
-      }
-    }
-
-    if (!process.env.NETLIFY_BLOBS_TOKEN) {
-      console.error('Falta la variable de entorno NETLIFY_BLOBS_TOKEN');
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Falta la variable de entorno NETLIFY_BLOBS_TOKEN' }),
-      }
-    }
-
-    const store = getStore({
-      name: 'taskflow',
-      token: process.env.NETLIFY_BLOBS_TOKEN
-    })
+    const userId = event.headers['x-user-id'] || 'default-user'
+    const dataPath = path.join(DATA_DIR, `${userId}.json`)
 
     if (event.httpMethod === 'GET') {
       try {
-        console.log('Attempting to fetch data for user:', userId)
-        const result = await store.get(`data-${userId}`)
-        
-        if (!result) {
-          console.log('No data found for user:', userId)
+        if (!fs.existsSync(dataPath)) {
           return {
             statusCode: 200,
-            body: JSON.stringify({ people: [], clients: [] }),
+            body: JSON.stringify({ people: [], clients: [] })
           }
         }
 
-        const resultText = result.toString()
-        console.log('Data retrieved, length:', resultText.length)
-        
-        const data = JSON.parse(resultText)
+        const data = fs.readFileSync(dataPath, 'utf-8')
         return {
           statusCode: 200,
-          body: JSON.stringify(data),
+          body: data
         }
-      } catch (maybeError) {
-        const error = toErrorWithMessage(maybeError)
-        console.error('Error fetching data:', {
-          error: error.message,
-          userId
-        })
-        
+      } catch (error) {
+        console.error('Error reading data:', error)
         return {
           statusCode: 200,
-          body: JSON.stringify({ 
-            people: [], 
-            clients: [],
-            debug: process.env.NODE_ENV === 'development' ? error.message : undefined
-          }),
+          body: JSON.stringify({ people: [], clients: [] })
         }
       }
     }
 
     if (event.httpMethod === 'POST' && event.body) {
       try {
-        // Parse and validate the incoming data
         const jsonData = typeof event.body === 'string' ? event.body : JSON.stringify(event.body)
         
-        // Log the data being processed
-        console.log('Processing data:', {
+        // Log para debugging
+        console.log('Writing data:', {
           userId,
-          dataType: typeof jsonData,
-          dataLength: jsonData.length,
-          tokenPresent: !!process.env.NETLIFY_BLOBS_TOKEN
+          path: dataPath,
+          dataSize: jsonData.length
         })
 
-        // Store as a text string instead of Blob
-        await store.set(`data-${userId}`, jsonData)
+        fs.writeFileSync(dataPath, jsonData)
         
-        console.log('Data saved successfully for user:', userId)
+        console.log('Data saved successfully')
         
         return {
           statusCode: 200,
           body: JSON.stringify({ 
             success: true,
             message: 'Data saved successfully'
-          }),
+          })
         }
-      } catch (maybeError) {
-        const error = toErrorWithMessage(maybeError)
+      } catch (error) {
         console.error('Error saving data:', {
-          error: error.message,
-          userId,
-          stack: error.stack,
-          tokenPresent: !!process.env.NETLIFY_BLOBS_TOKEN
+          error: error instanceof Error ? error.message : String(error),
+          path: dataPath
         })
         
         return {
           statusCode: 500,
           body: JSON.stringify({ 
             error: 'Error saving data',
-            message: error.message,
-            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-          }),
+            message: error instanceof Error ? error.message : String(error)
+          })
         }
       }
     }
 
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' }),
+      body: JSON.stringify({ error: 'Method not allowed' })
     }
   } catch (error) {
+    console.error('Unexpected error:', error)
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : String(error)
+      })
     }
   }
 }
