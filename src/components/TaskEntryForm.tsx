@@ -16,6 +16,8 @@ const formSchema = z.object({
   clientId: z.string().optional(),
 });
 
+const NONE_VALUE = "none";
+
 interface TaskEntryFormProps {
   onAddTask: (description: string, duration: number, clientId?: string) => void;
   clients: Client[];
@@ -27,13 +29,14 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
     defaultValues: {
       description: '',
       duration: 1,
-      clientId: '',
+      clientId: NONE_VALUE,
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddTask(values.description, values.duration, values.clientId);
-    form.reset();
+    const clientId = values.clientId === NONE_VALUE ? undefined : values.clientId;
+    onAddTask(values.description, values.duration, clientId);
+    form.reset({ description: '', duration: 1, clientId: NONE_VALUE });
   }
 
   return (
@@ -65,7 +68,7 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value={NONE_VALUE}>None</SelectItem>
                     {clients.map(client => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
