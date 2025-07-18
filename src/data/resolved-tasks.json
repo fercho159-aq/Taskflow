@@ -1,0 +1,5 @@
+
+[
+  { "id": "task-resolved-1", "description": "Initial project setup", "duration": 8, "isCompleted": true },
+  { "id": "task-resolved-2", "description": "Design database schema", "duration": 5, "isCompleted": true }
+]

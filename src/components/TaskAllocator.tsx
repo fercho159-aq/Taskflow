@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Person, Task } from '@/lib/types';
 import { TaskEntryForm } from './TaskEntryForm';
 import { WorkloadDashboard } from './WorkloadDashboard';
 import { TaskColumns } from './TaskColumns';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import initialPendingTasks from '@/data/pending-tasks.json';
+import initialResolvedTasks from '@/data/resolved-tasks.json';
 
 const initialPeople: Person[] = [
   { id: '1', name: 'Omar', tasks: [], totalHours: 0 },
@@ -15,9 +17,30 @@ const initialPeople: Person[] = [
 
 export function TaskAllocator() {
   const [people, setPeople] = useState<Person[]>(initialPeople);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    // This effect runs only once on the client to initialize the state
+    if (!isInitialized) {
+      const allTasks = [...initialPendingTasks, ...initialResolvedTasks];
+      let currentPeople = [...initialPeople].map(p => ({ ...p, tasks: [], totalHours: 0 }));
+
+      allTasks.forEach((task, index) => {
+        // Simple round-robin assignment for initial load
+        const personIndex = index % currentPeople.length;
+        currentPeople[personIndex].tasks.push({ ...task });
+        if (!task.isCompleted) {
+          currentPeople[personIndex].totalHours += task.duration;
+        }
+      });
+      
+      setPeople(currentPeople);
+      setIsInitialized(true);
+    }
+  }, [isInitialized]);
 
   const handleAddTask = (taskDescription: string, taskDuration: number) => {
-    // Find person with the least workload
+    // Find person with the least workload (only considering active tasks)
     const personWithLeastWorkload = [...people].sort(
       (a, b) => a.totalHours - b.totalHours
     )[0];
@@ -26,6 +49,7 @@ export function TaskAllocator() {
       id: crypto.randomUUID(),
       description: taskDescription,
       duration: taskDuration,
+      isCompleted: false,
     };
 
     setPeople((currentPeople) =>
@@ -36,6 +60,30 @@ export function TaskAllocator() {
             ...person,
             tasks: updatedTasks,
             totalHours: person.totalHours + taskDuration,
+          };
+        }
+        return person;
+      })
+    );
+  };
+  
+  const handleToggleTask = (personId: string, taskId: string) => {
+    setPeople(currentPeople =>
+      currentPeople.map(person => {
+        if (person.id === personId) {
+          let hoursChange = 0;
+          const updatedTasks = person.tasks.map(task => {
+            if (task.id === taskId) {
+              hoursChange = task.isCompleted ? task.duration : -task.duration;
+              return { ...task, isCompleted: !task.isCompleted };
+            }
+            return task;
+          });
+
+          return {
+            ...person,
+            tasks: updatedTasks,
+            totalHours: person.totalHours + hoursChange,
           };
         }
         return person;
@@ -63,7 +111,7 @@ export function TaskAllocator() {
 
           <WorkloadDashboard people={people} />
 
-          <TaskColumns people={people} />
+          <TaskColumns people={people} onToggleTask={handleToggleTask} />
         </main>
       </div>
     </div>
