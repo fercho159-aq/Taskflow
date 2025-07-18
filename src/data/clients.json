@@ -1,6 +1,19 @@
 [
-  { "id": "client-1", "name": "Innovate Corp" },
-  { "id": "client-2", "name": "Quantum Solutions" },
-  { "id": "client-3", "name": "Apex Industries" },
-  { "id": "client-4", "name": "Stellar Tech" }
+  { "id": "client-1", "name": "Simtex" },
+  { "id": "client-2", "name": "Perfumes Essentia" },
+  { "id": "client-3", "name": "Sifsa" },
+  { "id": "client-4", "name": "Leather" },
+  { "id": "client-5", "name": "Emilio Fotografía" },
+  { "id": "client-6", "name": "Polar Autopartes" },
+  { "id": "client-7", "name": "Coloquios" },
+  { "id": "client-8", "name": "Alpha Hardin" },
+  { "id": "client-9", "name": "Kohui" },
+  { "id": "client-10", "name": "Importaciones y Exportaciones Moctezuma" },
+  { "id": "client-11", "name": "Planet Soccer" },
+  { "id": "client-12", "name": "Cruz Roja" },
+  { "id": "client-13", "name": "Contexto Empresarial" },
+  { "id": "client-14", "name": "DC Solution" },
+  { "id": "client-15", "name": "Terapeuta Adriana" },
+  { "id": "client-16", "name": "Caficon" },
+  { "id": "client-17", "name": "Hermilio" }
 ]

@@ -1,5 +1,23 @@
 
 [
-  { "id": "task-resolved-1", "description": "Initial project setup", "duration": 8, "isCompleted": true, "clientId": "client-1" },
-  { "id": "task-resolved-2", "description": "Design database schema", "duration": 5, "isCompleted": true, "clientId": "client-4" }
+  { "id": "task-resolved-1", "description": "Cotización de videos", "duration": 3, "isCompleted": true, "clientId": "client-1" },
+  { "id": "task-resolved-2", "description": "Cambios en notas", "duration": 2, "isCompleted": true, "clientId": "client-3" },
+  { "id": "task-resolved-3", "description": "Rediseñar página de productos", "duration": 6, "isCompleted": true, "clientId": "client-4" },
+  { "id": "task-resolved-4", "description": "Preguntar por fotos", "duration": 1, "isCompleted": true, "clientId": "client-5" },
+  { "id": "task-resolved-5", "description": "Enviar excel para productos", "duration": 2, "isCompleted": true, "clientId": "client-6" },
+  { "id": "task-resolved-6", "description": "Cambios", "duration": 3, "isCompleted": true, "clientId": "client-7" },
+  { "id": "task-resolved-7", "description": "Enviar Templates", "duration": 2, "isCompleted": true, "clientId": "client-6" },
+  { "id": "task-resolved-8", "description": "Respaldo", "duration": 4, "isCompleted": true, "clientId": "client-8" },
+  { "id": "task-resolved-9", "description": "Linktree", "duration": 3, "isCompleted": true, "clientId": "client-9" },
+  { "id": "task-resolved-10", "description": "Cambios de imágenes", "duration": 4, "isCompleted": true, "clientId": "client-10" },
+  { "id": "task-resolved-11", "description": "Documento de cierre", "duration": 3, "isCompleted": true, "clientId": "client-10" },
+  { "id": "task-resolved-12", "description": "Menu mobile", "duration": 5, "isCompleted": true, "clientId": "client-11" },
+  { "id": "task-resolved-13", "description": "Iframe Tik Tok", "duration": 2, "isCompleted": true, "clientId": "client-11" },
+  { "id": "task-resolved-14", "description": "Contactanos con error", "duration": 2, "isCompleted": true, "clientId": "client-11" },
+  { "id": "task-resolved-15", "description": "Footer con error", "duration": 2, "isCompleted": true, "clientId": "client-12" },
+  { "id": "task-resolved-16", "description": "Videos Testimoniales en el home", "duration": 4, "isCompleted": true, "clientId": "client-12" },
+  { "id": "task-resolved-17", "description": "Borrar el 'QUE' en descripción", "duration": 1, "isCompleted": true, "clientId": "client-12" },
+  { "id": "task-resolved-18", "description": "Nota de blog", "duration": 3, "isCompleted": true, "clientId": "client-14" },
+  { "id": "task-resolved-19", "description": "Actualizar Banner", "duration": 2, "isCompleted": true, "clientId": "client-15" },
+  { "id": "task-resolved-20", "description": "Sección 6", "duration": 4, "isCompleted": true, "clientId": "client-16" }
 ]

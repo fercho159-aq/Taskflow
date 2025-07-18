@@ -1,6 +1,13 @@
 
 [
-  { "id": "task-1", "description": "Deploy the new website to production", "duration": 4, "isCompleted": false, "clientId": "client-1" },
-  { "id": "task-2", "description": "Update the user documentation", "duration": 2.5, "isCompleted": false, "clientId": "client-3" },
-  { "id": "task-3", "description": "Fix the login page bug", "duration": 1.5, "isCompleted": false, "clientId": "client-2" }
+  { "id": "task-1", "description": "Presionar y cobrar", "duration": 2, "isCompleted": false, "clientId": "client-2" },
+  { "id": "task-2", "description": "Actualizar productos", "duration": 4, "isCompleted": false, "clientId": "client-4" },
+  { "id": "task-3", "description": "Excel productos Merch", "duration": 3, "isCompleted": false, "clientId": "client-5" },
+  { "id": "task-4", "description": "Subir fotos Merch", "duration": 4, "isCompleted": false, "clientId": "client-5" },
+  { "id": "task-5", "description": "Entregar sitio completo", "duration": 8, "isCompleted": false, "clientId": "client-9" },
+  { "id": "task-6", "description": "Landing Page", "duration": 6, "isCompleted": false, "clientId": "client-14" },
+  { "id": "task-7", "description": "Migración y limpieza", "duration": 5, "isCompleted": false, "clientId": "client-10" },
+  { "id": "task-8", "description": "Mandar guiones", "duration": 3, "isCompleted": false, "clientId": "client-17" },
+  { "id": "task-9", "description": "Parrilla", "duration": 4, "isCompleted": false, "clientId": "client-17" },
+  { "id": "task-10", "description": "Sitio web Polar", "duration": 12, "isCompleted": false, "clientId": "client-6" }
 ]
