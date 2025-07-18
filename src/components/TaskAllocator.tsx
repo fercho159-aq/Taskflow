@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Person, Task, Client } from '@/lib/types';
+import { loadData, saveData } from '@/lib/api';
 import { TaskEntryForm } from './TaskEntryForm';
 import { WorkloadDashboard } from './WorkloadDashboard';
 import { TaskColumns } from './TaskColumns';
@@ -36,46 +37,59 @@ export function TaskAllocator() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Initialize state from localStorage or fallback to JSON files
-    const storedPeople = getInitialState<Person[] | null>('task-allocator-people', null);
-    const storedClients = getInitialState<Client[] | null>('task-allocator-clients', null);
+    // Initialize state from API or fallback to JSON files
+    const initializeData = async () => {
+      try {
+        const data = await loadData();
+        
+        if (data?.people && data?.clients) {
+          setPeople(data.people);
+          setClients(data.clients);
+        } else {
+          // First time load, initialize from JSON
+          const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
+          const clientMap = new Map(initialClients.map(c => [c.id, c.name]));
 
-    if (storedPeople && storedClients) {
-      setPeople(storedPeople);
-      setClients(storedClients);
-    } else {
-      // First time load, initialize from JSON
-      const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
-      const clientMap = new Map(initialClients.map(c => [c.id, c.name]));
+          let currentPeople = initialPeopleData.map(p => ({ ...p, tasks: [] as Task[], totalHours: 0 }));
 
-      let currentPeople = initialPeopleData.map(p => ({ ...p, tasks: [], totalHours: 0 }));
-
-      allTasks.forEach((task, index) => {
-        const personIndex = index % currentPeople.length;
-        const taskWithClientName = {
-          ...task,
-          clientName: task.clientId ? clientMap.get(task.clientId) : undefined,
-        };
-        currentPeople[personIndex].tasks.push(taskWithClientName);
-        if (!task.isCompleted) {
-          currentPeople[personIndex].totalHours += task.duration;
+          allTasks.forEach((task, index) => {
+            const personIndex = index % currentPeople.length;
+            const taskWithClientName = {
+              ...task,
+              clientName: task.clientId ? clientMap.get(task.clientId) : undefined,
+            };
+            currentPeople[personIndex].tasks.push(taskWithClientName);
+            if (!task.isCompleted) {
+              currentPeople[personIndex].totalHours += task.duration;
+            }
+          });
+          setPeople(currentPeople);
+          setClients(initialClients);
+          
+          // Save initial data to API
+          await saveData({ people: currentPeople, clients: initialClients });
         }
-      });
-      setPeople(currentPeople);
-      setClients(initialClients);
-    }
-    setIsInitialized(true);
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        setIsInitialized(true);
+      }
+    };
+    
+    initializeData();
   }, []);
 
   useEffect(() => {
-    // Persist state to localStorage whenever it changes
+    // Persist state to API whenever it changes
     if (isInitialized) {
-      try {
-        window.localStorage.setItem('task-allocator-people', JSON.stringify(people));
-        window.localStorage.setItem('task-allocator-clients', JSON.stringify(clients));
-      } catch (error) {
-        console.error('Error al guardar el estado en localStorage:', error);
-      }
+      const saveToApi = async () => {
+        try {
+          await saveData({ people, clients });
+        } catch (error) {
+          console.error('Error al guardar el estado en la API:', error);
+        }
+      };
+      saveToApi();
     }
   }, [people, clients, isInitialized]);
 
