@@ -143,14 +143,6 @@ export function TaskAllocator() {
       })
     );
   };
-
-  const personWithLeastWorkload = people.length > 0 ? [...people].sort(
-      (a, b) => a.totalHours - b.totalHours
-    )[0] : null;
-
-  const availableClientsForNewTask = personWithLeastWorkload 
-    ? clients.filter(client => personWithLeastWorkload.clientIds.includes(client.id))
-    : clients;
     
   if (!isInitialized) {
       return (
@@ -183,7 +175,7 @@ export function TaskAllocator() {
                 <CardTitle>Add a New Task</CardTitle>
               </CardHeader>
               <CardContent>
-                <TaskEntryForm onAddTask={handleAddTask} clients={availableClientsForNewTask} />
+                <TaskEntryForm onAddTask={handleAddTask} clients={clients} />
               </CardContent>
             </Card>
           </div>
