@@ -33,12 +33,18 @@ export const handler: Handler = async (event) => {
     }
 
     if (event.httpMethod === 'POST' && event.body) {
-      const data = event.body
-      const blob = new Blob([data], { type: 'application/json' })
-      await store.set(`data-${userId}`, blob)
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ success: true }),
+      try {
+        const jsonData = typeof event.body === 'string' ? event.body : JSON.stringify(event.body)
+        const blob = new Blob([jsonData], { type: 'application/json' })
+        await store.set(`data-${userId}`, blob)
+        console.log('Data saved successfully:', jsonData) // Para debug
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ success: true }),
+        }
+      } catch (error) {
+        console.error('Error saving data:', error) // Para debug
+        throw error
       }
     }
 

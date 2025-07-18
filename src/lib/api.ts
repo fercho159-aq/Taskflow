@@ -10,6 +10,7 @@ interface TaskflowData {
 
 export async function saveData(data: TaskflowData): Promise<void> {
   try {
+    console.log('Enviando datos a la API:', data);
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
@@ -20,11 +21,16 @@ export async function saveData(data: TaskflowData): Promise<void> {
     })
     
     if (!response.ok) {
-      throw new Error('Failed to save data')
+      const errorData = await response.text();
+      console.error('Error response from server:', errorData);
+      throw new Error(`Failed to save data: ${response.status} ${response.statusText}`);
     }
+
+    const result = await response.json();
+    console.log('Respuesta del servidor:', result);
   } catch (error) {
-    console.error('Error saving data:', error)
-    throw error
+    console.error('Error saving data:', error);
+    throw error;
   }
 }
 

@@ -84,9 +84,13 @@ export function TaskAllocator() {
     if (isInitialized) {
       const saveToApi = async () => {
         try {
+          console.log('Guardando datos:', { people, clients });
           await saveData({ people, clients });
+          console.log('Datos guardados exitosamente');
         } catch (error) {
           console.error('Error al guardar el estado en la API:', error);
+          // Mostrar el error al usuario
+          alert('Error al guardar los cambios. Por favor, intenta de nuevo.');
         }
       };
       saveToApi();
