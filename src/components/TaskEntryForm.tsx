@@ -9,7 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PlusCircle } from 'lucide-react';
-import type { Client } from '@/lib/types';
+import type { Client, Person } from '@/lib/types';
 
 const tags = [{id: 'New Client', label: 'Cliente Nuevo'}, {id: 'Maintenance', label: 'Mantenimiento'}] as const;
 
@@ -18,16 +18,19 @@ const formSchema = z.object({
   duration: z.coerce.number().min(0.1, 'La duración debe ser de al menos 0.1 horas.'),
   clientId: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  personId: z.string().optional(),
 });
 
 const NONE_VALUE = "none";
+const AUTO_ASSIGN_VALUE = "auto";
 
 interface TaskEntryFormProps {
-  onAddTask: (description: string, duration: number, tags: ('New Client' | 'Maintenance')[], clientId?: string) => void;
+  onAddTask: (description: string, duration: number, tags: ('New Client' | 'Maintenance')[], clientId?: string, personId?: string) => void;
   clients: Client[];
+  people: Person[];
 }
 
-export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
+export function TaskEntryForm({ onAddTask, clients, people }: TaskEntryFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,29 +38,56 @@ export function TaskEntryForm({ onAddTask, clients }: TaskEntryFormProps) {
       duration: 1,
       clientId: NONE_VALUE,
       tags: [],
+      personId: AUTO_ASSIGN_VALUE,
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const clientId = values.clientId === NONE_VALUE ? undefined : values.clientId;
+    const personId = values.personId === AUTO_ASSIGN_VALUE ? undefined : values.personId;
     const selectedTags = (values.tags || []) as ('New Client' | 'Maintenance')[];
-    onAddTask(values.description, values.duration, selectedTags, clientId);
-    form.reset({ description: '', duration: 1, clientId: NONE_VALUE, tags: [] });
+    onAddTask(values.description, values.duration, selectedTags, clientId, personId);
+    form.reset({ description: '', duration: 1, clientId: NONE_VALUE, tags: [], personId: AUTO_ASSIGN_VALUE });
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descripción de la Tarea</FormLabel>
+              <FormControl>
+                <Input placeholder="p. ej., Diseñar la nueva página de inicio" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
+           <FormField
             control={form.control}
-            name="description"
+            name="personId"
             render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Descripción de la Tarea</FormLabel>
-                <FormControl>
-                  <Input placeholder="p. ej., Diseñar la nueva página de inicio" {...field} />
-                </FormControl>
+              <FormItem>
+                <FormLabel>Asignar a</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona a una persona" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={AUTO_ASSIGN_VALUE}>Asignación Automática</SelectItem>
+                      {people.map(person => (
+                        <SelectItem key={person.id} value={person.id}>
+                          {person.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 <FormMessage />
               </FormItem>
             )}

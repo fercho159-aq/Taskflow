@@ -88,10 +88,19 @@ export function TaskAllocator() {
     setClients(currentClients => [...currentClients, newClient]);
   };
 
-  const handleAddTask = (taskDescription: string, taskDuration: number, tags: ('New Client' | 'Maintenance')[] , clientId?: string) => {
-    const personWithLeastWorkload = [...people].sort(
-      (a, b) => a.totalHours - b.totalHours
-    )[0];
+  const handleAddTask = (taskDescription: string, taskDuration: number, tags: ('New Client' | 'Maintenance')[] , clientId?: string, personId?: string) => {
+    const getTargetPerson = () => {
+        if (personId) {
+            return people.find(p => p.id === personId);
+        }
+        return [...people].sort((a, b) => a.totalHours - b.totalHours)[0];
+    };
+
+    const targetPerson = getTargetPerson();
+    if (!targetPerson) {
+        console.error("No se pudo encontrar a la persona para asignar la tarea.");
+        return;
+    }
 
     const clientName = clientId ? clients.find(c => c.id === clientId)?.name : undefined;
 
@@ -107,7 +116,7 @@ export function TaskAllocator() {
 
     setPeople((currentPeople) =>
       currentPeople.map((person) => {
-        if (person.id === personWithLeastWorkload.id) {
+        if (person.id === targetPerson.id) {
           const updatedTasks = [...person.tasks, newTask];
           return {
             ...person,
@@ -175,7 +184,7 @@ export function TaskAllocator() {
                 <CardTitle>Añadir una Nueva Tarea</CardTitle>
               </CardHeader>
               <CardContent>
-                <TaskEntryForm onAddTask={handleAddTask} clients={clients} />
+                <TaskEntryForm onAddTask={handleAddTask} clients={clients} people={people} />
               </CardContent>
             </Card>
           </div>
