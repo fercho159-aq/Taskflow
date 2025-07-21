@@ -44,31 +44,25 @@ export const handler: Handler = async (event) => {
   try {
     const userId = event.headers['x-user-id'] || 'default-user'
 
-    // Asegurarse de que el usuario existe
-    await sql`
-      INSERT INTO users (id)
-      VALUES (${userId})
-      ON CONFLICT (id) DO NOTHING;
-    `
-
     if (event.httpMethod === 'GET') {
       try {
-        // Obtener usuarios, tareas y clientes
+        // Obtener usuarios con sus datos
         const users = await sql`
-          SELECT * FROM users
-          ORDER BY id;
+          SELECT u.id, u.name, u.client_ids 
+          FROM users u
+          ORDER BY u.id;
         `
 
         const tasks = await sql`
-          SELECT * FROM tasks
-          WHERE user_id = ${userId}
-          ORDER BY created_at DESC;
+          SELECT t.*
+          FROM tasks t
+          ORDER BY t.created_at DESC;
         `
 
         const clients = await sql`
-          SELECT * FROM clients
-          WHERE user_id = ${userId}
-          ORDER BY name;
+          SELECT c.*
+          FROM clients c
+          ORDER BY c.name;
         `
 
         // Transformar los datos al formato esperado por el frontend
