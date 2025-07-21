@@ -142,6 +142,7 @@ export function TaskAllocator() {
 
     const clientName = clientId ? clients.find(c => c.id === clientId)?.name : undefined;
 
+    // Note: The backend will calculate the actual due date
     const newTask: Task = {
       id: crypto.randomUUID(),
       description: taskDescription,
