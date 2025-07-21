@@ -42,14 +42,35 @@ initializeTables()
 
 export const handler: Handler = async (event) => {
   try {
-    const userId = event.headers['x-user-id'] || 'default-user'
+    const userId = event.headers['x-user-id'];
+    if (!userId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'x-user-id header is required' })
+      };
+    }
 
     if (event.httpMethod === 'GET') {
       try {
-        // Obtener usuarios con sus datos
+        // Obtener usuarios específicos
         const users = await sql`
-          SELECT u.id, u.name, u.client_ids 
-          FROM users u
+          WITH known_users AS (
+            SELECT * FROM (VALUES 
+              ('1', 'Omar'),
+              ('2', 'Fernando'),
+              ('3', 'Julio')
+            ) AS u(id, name)
+          )
+          SELECT 
+            u.id,
+            u.name,
+            COALESCE(
+              (SELECT array_agg(DISTINCT c.id)
+               FROM clients c
+               WHERE c.user_id = u.id), 
+              '{}'::text[]
+            ) as client_ids
+          FROM known_users u
           ORDER BY u.id;
         `
 
@@ -112,11 +133,23 @@ export const handler: Handler = async (event) => {
           throw new Error('Invalid data structure: people array is required');
         }
 
-        // Primero, asegurarse de que el usuario existe
+        // Verificar que el usuario es válido
+        if (!['1', '2', '3'].includes(userId)) {
+          throw new Error('Invalid user ID. Must be 1, 2, or 3.');
+        }
+
+        // Asegurarse de que el usuario existe con el nombre correcto
+        const userName = {
+          '1': 'Omar',
+          '2': 'Fernando',
+          '3': 'Julio'
+        }[userId];
+
         await sql`
           INSERT INTO users (id, name)
-          VALUES (${userId}, ${userId})
-          ON CONFLICT (id) DO NOTHING;
+          VALUES (${userId}, ${userName})
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name;
         `;
         
         // Begin transaction

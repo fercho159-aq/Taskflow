@@ -39,7 +39,7 @@ export function TaskAllocator() {
     // Initialize state from backend
     fetch('/.netlify/functions/tasks', {
       headers: {
-        'x-user-id': 'default-user'
+        'x-user-id': '1' // ID de Omar
       }
     })
     .then(response => response.json())
@@ -85,7 +85,7 @@ export function TaskAllocator() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-user-id': 'default-user'
+              'x-user-id': '1' // ID de Omar
             },
             body: JSON.stringify({ 
               people: people.map(p => ({
