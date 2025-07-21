@@ -1,6 +1,7 @@
 import { Handler } from '@netlify/functions'
 import { neon } from '@netlify/neon'
 import { calculateDueDate } from './utils'
+import type { Client, Task, Person, RequestData } from './types'
 
 // Inicializar la conexión a la base de datos
 const sql = neon(process.env.NETLIFY_DATABASE_URL)
@@ -8,33 +9,42 @@ const sql = neon(process.env.NETLIFY_DATABASE_URL)
 // Asegurarnos de que las tablas existen
 async function initializeTables() {
   try {
-    await sql`CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT)`;
-    await sql`CREATE TABLE IF NOT EXISTS tasks (
-      id TEXT PRIMARY KEY,
-      user_id TEXT REFERENCES users(id),
-      description TEXT,
-      duration INTEGER,
-      is_completed BOOLEAN DEFAULT FALSE,
-      client_id TEXT,
-      client_name TEXT,
-      tags TEXT[],
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      due_date TIMESTAMP WITH TIME ZONE
-    )`;
-    await sql`CREATE TABLE IF NOT EXISTS clients (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      user_id TEXT REFERENCES users(id),
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    )`;
-      );
+    await sql`
+      DROP TABLE IF EXISTS tasks CASCADE;
+      DROP TABLE IF EXISTS clients CASCADE;
+      DROP TABLE IF EXISTS users CASCADE;
+    `;
 
-      CREATE TABLE IF NOT EXISTS clients (
+    await sql`
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        name TEXT
+      )
+    `;
+
+    await sql`
+      CREATE TABLE clients (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         user_id TEXT REFERENCES users(id),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
+      )
+    `;
+
+    await sql`
+      CREATE TABLE tasks (
+        id TEXT PRIMARY KEY,
+        user_id TEXT REFERENCES users(id),
+        description TEXT,
+        duration INTEGER,
+        is_completed BOOLEAN DEFAULT FALSE,
+        client_id TEXT,
+        client_name TEXT,
+        tags TEXT[],
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        due_date TIMESTAMP WITH TIME ZONE,
+        assigned_to TEXT REFERENCES users(id)
+      )
     `
     console.log('Tables initialized successfully')
   } catch (error) {
@@ -92,8 +102,8 @@ export const handler: Handler = async (event) => {
         `
 
         // Transformar los datos al formato esperado por el frontend
-        const people = users.map(person => {
-          const personTasks = tasks.filter(t => t.assigned_to === person.id).map(t => ({
+        const people = users.map((person: Record<string, any>) => {
+          const personTasks = tasks.filter((t: Record<string, any>) => t.assigned_to === person.id).map((t: Record<string, any>) => ({
             id: t.id,
             description: t.description,
             duration: t.duration,
@@ -131,7 +141,7 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === 'POST' && event.body) {
       try {
-        const data = JSON.parse(typeof event.body === 'string' ? event.body : event.body);
+        const data = JSON.parse(typeof event.body === 'string' ? event.body : event.body) as RequestData;
         console.log('Received data:', JSON.stringify(data, null, 2));
 
         // Validate data structure
@@ -163,7 +173,7 @@ export const handler: Handler = async (event) => {
         
         try {
           // Actualizar clientes
-          const clientsToUpdate = (data.clients || []).filter(c => c && c.id && c.name);
+          const clientsToUpdate = (data.clients || []).filter((c: Client) => c && c.id && c.name);
           if (clientsToUpdate.length > 0) {
             console.log('Updating clients:', clientsToUpdate.length);
             for (const client of clientsToUpdate) {
@@ -181,7 +191,7 @@ export const handler: Handler = async (event) => {
             console.log('Processing tasks for people:', data.people.length);
             
             // Borrar solo las tareas del usuario que vamos a actualizar
-            const personIds = data.people.map(p => p.id).filter(Boolean);
+            const personIds = data.people.map((p: Person) => p.id).filter(Boolean);
             if (personIds.length > 0) {
               await sql`
                 DELETE FROM tasks 
@@ -193,7 +203,7 @@ export const handler: Handler = async (event) => {
             // Insertar las nuevas tareas
             for (const person of data.people) {
               if (person && person.id && Array.isArray(person.tasks)) {
-                const validTasks = person.tasks.filter(t => t && t.id && t.description);
+                const validTasks = person.tasks.filter((t: Task) => t && t.id && t.description);
                 for (const task of validTasks) {
                   await sql`
                     INSERT INTO tasks (

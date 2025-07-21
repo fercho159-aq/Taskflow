@@ -11,10 +11,12 @@ interface TaskColumnsProps {
   onToggleTask: (personId: string, taskId: string) => void;
 }
 
-const tagTranslations: Record<'New Client' | 'Maintenance', string> = {
+const tagTranslations = {
     'New Client': 'Cliente Nuevo',
     'Maintenance': 'Mantenimiento'
-}
+} as const;
+
+type TagType = keyof typeof tagTranslations;
 
 export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
   return (
@@ -73,7 +75,7 @@ export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
                                   {task.tags?.map(tag => (
                                       <Badge key={tag} variant={tag === 'New Client' ? 'default' : 'secondary'} className="text-xs">
                                           <Tag className="h-3 w-3 mr-1" />
-                                          {tagTranslations[tag]}
+                                          {tagTranslations[tag as TagType] || tag}
                                       </Badge>
                                   ))}
                                 </div>
