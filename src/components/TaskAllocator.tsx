@@ -48,7 +48,7 @@ export function TaskAllocator() {
       const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
       const clientMap = new Map(initialClients.map(c => [c.id, c.name]));
 
-      let currentPeople = initialPeopleData.map(p => ({ ...p, tasks: [], totalHours: 0 }));
+      let currentPeople = initialPeopleData.map(p => ({ ...p, tasks: [] as Task[], totalHours: 0 }));
 
       allTasks.forEach((task, index) => {
         const personIndex = index % currentPeople.length;

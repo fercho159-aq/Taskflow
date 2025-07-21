@@ -105,62 +105,76 @@ export const handler: Handler = async (event) => {
     if (event.httpMethod === 'POST' && event.body) {
       try {
         const data = JSON.parse(typeof event.body === 'string' ? event.body : event.body)
+        console.log('Received data:', data)
         
         // Actualizar clientes
         if (data.clients?.length > 0) {
+          console.log('Updating clients:', data.clients)
           for (const client of data.clients) {
-            await sql`
-              INSERT INTO clients (id, name, user_id)
-              VALUES (${client.id}, ${client.name}, ${userId})
-              ON CONFLICT (id) DO UPDATE SET
-                name = EXCLUDED.name;
-            `
+            try {
+              await sql`
+                INSERT INTO clients (id, name, user_id)
+                VALUES (${client.id}, ${client.name}, ${userId})
+                ON CONFLICT (id) DO UPDATE SET
+                  name = EXCLUDED.name,
+                  user_id = EXCLUDED.user_id;
+              `
+              console.log('Client updated:', client.id)
+            } catch (error) {
+              console.error('Error updating client:', client.id, error)
+            }
           }
         }
 
         // Actualizar tareas
         if (data.people) {
-          const allTasks = data.people.flatMap(p => p.tasks.map(t => ({
-            id: t.id,
-            description: t.description,
-            duration: t.duration,
-            isCompleted: t.isCompleted,
-            clientId: t.clientId,
-            clientName: t.clientName,
-            tags: t.tags || [],
-            assigned_to: p.id
-          })))
-
-          for (const task of allTasks) {
-            await sql`
-              INSERT INTO tasks (
-                id, description, duration, is_completed, 
-                client_id, client_name, tags, user_id, assigned_to
-              )
-              VALUES (
-                ${task.id}, ${task.description}, ${task.duration}, ${task.isCompleted},
-                ${task.clientId}, ${task.clientName}, ${task.tags}, ${userId}, ${task.assigned_to}
-              )
-              ON CONFLICT (id) DO UPDATE SET
-                description = EXCLUDED.description,
-                duration = EXCLUDED.duration,
-                is_completed = EXCLUDED.is_completed,
-                client_id = EXCLUDED.client_id,
-                client_name = EXCLUDED.client_name,
-                tags = EXCLUDED.tags,
-                assigned_to = EXCLUDED.assigned_to;
-              ON CONFLICT (id) DO UPDATE SET
-                is_completed = EXCLUDED.is_completed,
-                description = EXCLUDED.description,
-                duration = EXCLUDED.duration,
-                client_id = EXCLUDED.client_id,
-                client_name = EXCLUDED.client_name,
-                tags = EXCLUDED.tags,
-                assigned_to = EXCLUDED.assigned_to;
-            `
+          console.log('Processing tasks for people:', data.people)
+          for (const person of data.people) {
+            if (Array.isArray(person.tasks)) {
+              for (const task of person.tasks) {
+                try {
+                  console.log('Updating task:', task)
+                  await sql`
+                    INSERT INTO tasks (
+                      id, description, duration, is_completed, 
+                      client_id, client_name, tags, user_id, assigned_to
+                    )
+                    VALUES (
+                      ${task.id}, 
+                      ${task.description}, 
+                      ${Number(task.duration) || 0}, 
+                      ${Boolean(task.isCompleted)}, 
+                      ${task.clientId || null}, 
+                      ${task.clientName || null}, 
+                      ${Array.isArray(task.tags) ? task.tags : []}, 
+                      ${userId}, 
+                      ${person.id}
+                    )
+                    ON CONFLICT (id) DO UPDATE SET
+                      description = EXCLUDED.description,
+                      duration = EXCLUDED.duration,
+                      is_completed = EXCLUDED.is_completed,
+                      client_id = EXCLUDED.client_id,
+                      client_name = EXCLUDED.client_name,
+                      tags = EXCLUDED.tags,
+                      assigned_to = EXCLUDED.assigned_to;
+                  `
+                  console.log('Task updated:', task.id)
+                } catch (error) {
+                  console.error('Error updating task:', task.id, error)
+                }
+              }
+            }
           }
         }
         
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ 
+            success: true,
+            message: 'Data saved successfully'
+          })
+        }
         return {
           statusCode: 200,
           body: JSON.stringify({ 
