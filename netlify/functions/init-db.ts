@@ -15,18 +15,22 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    // Crear tablas
-    await sql`
-      DROP TABLE IF EXISTS tasks;
-      DROP TABLE IF EXISTS clients;
-      DROP TABLE IF EXISTS users;
+    // Eliminar tablas existentes
+    await sql`DROP TABLE IF EXISTS tasks CASCADE`
+    await sql`DROP TABLE IF EXISTS clients CASCADE`
+    await sql`DROP TABLE IF EXISTS users CASCADE`
 
+    // Crear tabla de usuarios
+    await sql`
       CREATE TABLE users (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         client_ids TEXT[]
-      );
+      )
+    `
 
+    // Crear tabla de tareas
+    await sql`
       CREATE TABLE tasks (
         id TEXT PRIMARY KEY,
         description TEXT NOT NULL,
@@ -38,14 +42,17 @@ export const handler: Handler = async (event) => {
         assigned_to TEXT,
         user_id TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
+      )
+    `
 
+    // Crear tabla de clientes
+    await sql`
       CREATE TABLE clients (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         user_id TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
+      )
     `
 
     // Insertar usuarios iniciales
@@ -55,51 +62,71 @@ export const handler: Handler = async (event) => {
       { id: '3', name: 'Julio', clientIds: ['client-1', 'client-4'] }
     ]
 
-    await sql`
-      INSERT INTO users ${sql(initialUsers, 'id', 'name', 'clientIds')}
-    `
+    // Insertar usuarios
+    for (const user of initialUsers) {
+      await sql`
+        INSERT INTO users (id, name, client_ids)
+        VALUES (${user.id}, ${user.name}, ${user.clientIds})
+      `
+    }
 
     // Insertar clientes
-    await sql`
-      INSERT INTO clients ${sql(initialClients.map(c => ({
-        ...c,
-        user_id: 'default-user'
-      })), 'id', 'name', 'user_id')}
-    `
-
-    // Combinar todas las tareas
-    const allTasks = [
-      ...initialPendingTasks,
-      ...initialResolvedTasks
-    ].map((task, index) => {
-      const personIndex = index % 3 // Distribuir entre los 3 usuarios
-      const userId = (personIndex + 1).toString()
-      const client = initialClients.find(c => c.id === task.clientId)
-      
-      return {
-        ...task,
-        is_completed: task.isCompleted,
-        client_name: client?.name,
-        assigned_to: userId,
-        user_id: 'default-user',
-        tags: task.tags || []
-      }
-    })
+    for (const client of initialClients) {
+      await sql`
+        INSERT INTO clients (id, name, user_id)
+        VALUES (${client.id}, ${client.name}, ${'default-user'})
+      `
+    }
 
     // Insertar tareas
-    if (allTasks.length > 0) {
+    for (let i = 0; i < initialPendingTasks.length; i++) {
+      const task = initialPendingTasks[i];
+      const personIndex = i % 3;
+      const assignedTo = (personIndex + 1).toString();
+      const client = initialClients.find(c => c.id === task.clientId);
+
       await sql`
-        INSERT INTO tasks ${sql(allTasks, 
-          'id', 
-          'description', 
-          'duration', 
-          'is_completed', 
-          'client_id', 
-          'client_name',
-          'tags',
-          'assigned_to',
-          'user_id'
-        )}
+        INSERT INTO tasks (
+          id, description, duration, is_completed,
+          client_id, client_name, tags, assigned_to, user_id
+        )
+        VALUES (
+          ${task.id},
+          ${task.description},
+          ${task.duration},
+          ${task.isCompleted},
+          ${task.clientId},
+          ${client?.name},
+          ${[]},
+          ${assignedTo},
+          ${'default-user'}
+        )
+      `
+    }
+
+    // Insertar tareas resueltas
+    for (let i = 0; i < initialResolvedTasks.length; i++) {
+      const task = initialResolvedTasks[i];
+      const personIndex = i % 3;
+      const assignedTo = (personIndex + 1).toString();
+      const client = initialClients.find(c => c.id === task.clientId);
+
+      await sql`
+        INSERT INTO tasks (
+          id, description, duration, is_completed,
+          client_id, client_name, tags, assigned_to, user_id
+        )
+        VALUES (
+          ${task.id},
+          ${task.description},
+          ${task.duration},
+          ${task.isCompleted},
+          ${task.clientId},
+          ${client?.name},
+          ${[]},
+          ${assignedTo},
+          ${'default-user'}
+        )
       `
     }
 
@@ -109,7 +136,7 @@ export const handler: Handler = async (event) => {
         message: 'Database initialized successfully',
         usersCount: initialUsers.length,
         clientsCount: initialClients.length,
-        tasksCount: allTasks.length
+        tasksCount: initialPendingTasks.length + initialResolvedTasks.length
       })
     }
   } catch (error) {
