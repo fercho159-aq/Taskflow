@@ -11,7 +11,6 @@ export interface Task {
   clientId?: string;
   clientName?: string;
   tags: string[];
-  dueDate?: Date;
 }
 
 export interface Person {

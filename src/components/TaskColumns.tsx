@@ -55,17 +55,6 @@ export function TaskColumns({ people, onToggleTask }: TaskColumnsProps) {
                                   {task.description}
                                 </label>
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                                  {task.dueDate && (
-                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                      <span>Entrega: {new Date(task.dueDate).toLocaleString('es-MX', {
-                                        weekday: 'short',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: 'numeric',
-                                        minute: 'numeric'
-                                      })}</span>
-                                    </div>
-                                  )}
                                   {task.clientName && (
                                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                         <Briefcase className="h-3 w-3" />
