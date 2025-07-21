@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions'
 import { neon } from '@netlify/neon'
-import { calculateDueDate } from './utils'
 import type { Client, Task, Person, RequestData } from './types'
 
 // Inicializar la conexión a la base de datos
@@ -35,7 +34,6 @@ async function initializeTables(sql: any) {
       client_name TEXT,
       tags TEXT[],
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      due_date TIMESTAMP WITH TIME ZONE,
       assigned_to TEXT REFERENCES users(id)
     )
   `;
@@ -105,8 +103,7 @@ export const handler: Handler = async (event) => {
             isCompleted: t.is_completed,
             clientId: t.client_id,
             clientName: t.client_name,
-            tags: t.tags || [],
-            dueDate: t.due_date
+            tags: t.tags || []
           }))
           
           return {
@@ -203,7 +200,7 @@ export const handler: Handler = async (event) => {
                   await sql`
                     INSERT INTO tasks (
                       id, description, duration, is_completed, 
-                      client_id, client_name, tags, user_id, assigned_to, due_date
+                      client_id, client_name, tags, user_id, assigned_to
                     )
                     VALUES (
                       ${task.id}, 
@@ -214,8 +211,7 @@ export const handler: Handler = async (event) => {
                       ${task.clientName || null}, 
                       ${Array.isArray(task.tags) ? task.tags : []}, 
                       ${userId}, 
-                      ${person.id},
-                      ${calculateDueDate(Math.max(0, Number(task.duration) || 0))}
+                      ${person.id}
                     );
                   `;
                 }
