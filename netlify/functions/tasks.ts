@@ -108,38 +108,47 @@ export const handler: Handler = async (event) => {
         
         // Actualizar clientes
         if (data.clients?.length > 0) {
-          await sql`
-            WITH new_clients AS (
-              SELECT * FROM jsonb_to_recordset(${JSON.stringify(data.clients)})
-              AS x(id text, name text)
-            )
-            INSERT INTO clients (id, name, user_id)
-            SELECT id, name, ${userId}
-            FROM new_clients
-            ON CONFLICT (id) DO UPDATE SET
-              name = EXCLUDED.name;
-          `
+          for (const client of data.clients) {
+            await sql`
+              INSERT INTO clients (id, name, user_id)
+              VALUES (${client.id}, ${client.name}, ${userId})
+              ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name;
+            `
+          }
         }
 
         // Actualizar tareas
         if (data.people) {
           const allTasks = data.people.flatMap(p => p.tasks.map(t => ({
-            ...t,
+            id: t.id,
+            description: t.description,
+            duration: t.duration,
+            isCompleted: t.isCompleted,
+            clientId: t.clientId,
+            clientName: t.clientName,
+            tags: t.tags || [],
             assigned_to: p.id
           })))
 
-          if (allTasks.length > 0) {
+          for (const task of allTasks) {
             await sql`
-              WITH new_tasks AS (
-                SELECT * FROM jsonb_to_recordset(${JSON.stringify(allTasks)})
-                AS x(id text, description text, duration integer, is_completed boolean,
-                    client_id text, client_name text, tags text[], assigned_to text)
+              INSERT INTO tasks (
+                id, description, duration, is_completed, 
+                client_id, client_name, tags, user_id, assigned_to
               )
-              INSERT INTO tasks (id, description, duration, is_completed, client_id,
-                              client_name, tags, user_id, assigned_to)
-              SELECT id, description, duration, is_completed, client_id,
-                     client_name, tags, ${userId}, assigned_to
-              FROM new_tasks
+              VALUES (
+                ${task.id}, ${task.description}, ${task.duration}, ${task.isCompleted},
+                ${task.clientId}, ${task.clientName}, ${task.tags}, ${userId}, ${task.assigned_to}
+              )
+              ON CONFLICT (id) DO UPDATE SET
+                description = EXCLUDED.description,
+                duration = EXCLUDED.duration,
+                is_completed = EXCLUDED.is_completed,
+                client_id = EXCLUDED.client_id,
+                client_name = EXCLUDED.client_name,
+                tags = EXCLUDED.tags,
+                assigned_to = EXCLUDED.assigned_to;
               ON CONFLICT (id) DO UPDATE SET
                 is_completed = EXCLUDED.is_completed,
                 description = EXCLUDED.description,
