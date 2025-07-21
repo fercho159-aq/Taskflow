@@ -1,5 +1,6 @@
 import { Handler } from '@netlify/functions'
 import { neon } from '@netlify/neon'
+import { calculateDueDate } from './utils'
 
 // Inicializar la conexión a la base de datos
 const sql = neon(process.env.NETLIFY_DATABASE_URL)
@@ -21,7 +22,8 @@ async function initializeTables() {
         client_id TEXT,
         client_name TEXT,
         tags TEXT[],
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        due_date TIMESTAMP WITH TIME ZONE
       );
 
       CREATE TABLE IF NOT EXISTS clients (
@@ -95,7 +97,8 @@ export const handler: Handler = async (event) => {
             isCompleted: t.is_completed,
             clientId: t.client_id,
             clientName: t.client_name,
-            tags: t.tags || []
+            tags: t.tags || [],
+            dueDate: t.due_date
           }))
           
           return {
@@ -192,7 +195,7 @@ export const handler: Handler = async (event) => {
                   await sql`
                     INSERT INTO tasks (
                       id, description, duration, is_completed, 
-                      client_id, client_name, tags, user_id, assigned_to
+                      client_id, client_name, tags, user_id, assigned_to, due_date
                     )
                     VALUES (
                       ${task.id}, 
@@ -203,7 +206,8 @@ export const handler: Handler = async (event) => {
                       ${task.clientName || null}, 
                       ${Array.isArray(task.tags) ? task.tags : []}, 
                       ${userId}, 
-                      ${person.id}
+                      ${person.id},
+                      ${calculateDueDate(Math.max(0, Number(task.duration) || 0))}
                     );
                   `;
                 }
