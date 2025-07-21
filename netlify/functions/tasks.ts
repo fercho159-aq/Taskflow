@@ -104,12 +104,19 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === 'POST' && event.body) {
       try {
-        const data = JSON.parse(typeof event.body === 'string' ? event.body : event.body)
-        console.log('Received data:', data)
+        const data = JSON.parse(typeof event.body === 'string' ? event.body : event.body);
+        console.log('Received data:', data);
+
+        // Primero, asegurarse de que el usuario existe
+        await sql`
+          INSERT INTO users (id)
+          VALUES (${userId})
+          ON CONFLICT (id) DO NOTHING;
+        `;
         
         // Actualizar clientes
         if (data.clients?.length > 0) {
-          console.log('Updating clients:', data.clients)
+          console.log('Updating clients:', data.clients);
           for (const client of data.clients) {
             try {
               await sql`
@@ -118,22 +125,30 @@ export const handler: Handler = async (event) => {
                 ON CONFLICT (id) DO UPDATE SET
                   name = EXCLUDED.name,
                   user_id = EXCLUDED.user_id;
-              `
-              console.log('Client updated:', client.id)
+              `;
+              console.log('Client updated:', client.id);
             } catch (error) {
-              console.error('Error updating client:', client.id, error)
+              console.error('Error updating client:', client.id, error);
+              throw error;
             }
           }
         }
 
         // Actualizar tareas
         if (data.people) {
-          console.log('Processing tasks for people:', data.people)
+          console.log('Processing tasks for people:', data.people);
+          
+          // Primero, borrar todas las tareas existentes del usuario
+          await sql`
+            DELETE FROM tasks 
+            WHERE user_id = ${userId};
+          `;
+
           for (const person of data.people) {
             if (Array.isArray(person.tasks)) {
               for (const task of person.tasks) {
                 try {
-                  console.log('Updating task:', task)
+                  console.log('Creating task:', task);
                   await sql`
                     INSERT INTO tasks (
                       id, description, duration, is_completed, 
@@ -149,32 +164,18 @@ export const handler: Handler = async (event) => {
                       ${Array.isArray(task.tags) ? task.tags : []}, 
                       ${userId}, 
                       ${person.id}
-                    )
-                    ON CONFLICT (id) DO UPDATE SET
-                      description = EXCLUDED.description,
-                      duration = EXCLUDED.duration,
-                      is_completed = EXCLUDED.is_completed,
-                      client_id = EXCLUDED.client_id,
-                      client_name = EXCLUDED.client_name,
-                      tags = EXCLUDED.tags,
-                      assigned_to = EXCLUDED.assigned_to;
-                  `
-                  console.log('Task updated:', task.id)
+                    );
+                  `;
+                  console.log('Task created:', task.id);
                 } catch (error) {
-                  console.error('Error updating task:', task.id, error)
+                  console.error('Error creating task:', task.id, error);
+                  throw error;
                 }
               }
             }
           }
         }
         
-        return {
-          statusCode: 200,
-          body: JSON.stringify({ 
-            success: true,
-            message: 'Data saved successfully'
-          })
-        }
         return {
           statusCode: 200,
           body: JSON.stringify({ 

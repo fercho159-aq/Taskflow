@@ -36,45 +36,62 @@ export function TaskAllocator() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Initialize state from localStorage or fallback to JSON files
-    const storedPeople = getInitialState<Person[] | null>('task-allocator-people', null);
-    const storedClients = getInitialState<Client[] | null>('task-allocator-clients', null);
+    // Initialize state from backend
+    fetch('/.netlify/functions/tasks', {
+      headers: {
+        'x-user-id': 'default-user'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.people && data.clients) {
+        setPeople(data.people);
+        setClients(data.clients);
+      } else {
+        // First time load, initialize from JSON
+        const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
+        const clientMap = new Map(initialClients.map(c => [c.id, c.name]));
 
-    if (storedPeople && storedClients) {
-      setPeople(storedPeople);
-      setClients(storedClients);
-    } else {
-      // First time load, initialize from JSON
-      const allTasks: Task[] = [...initialPendingTasks, ...initialResolvedTasks];
-      const clientMap = new Map(initialClients.map(c => [c.id, c.name]));
+        let currentPeople = initialPeopleData.map(p => ({ ...p, tasks: [] as Task[], totalHours: 0 }));
 
-      let currentPeople = initialPeopleData.map(p => ({ ...p, tasks: [] as Task[], totalHours: 0 }));
-
-      allTasks.forEach((task, index) => {
-        const personIndex = index % currentPeople.length;
-        const taskWithClientName = {
-          ...task,
-          clientName: task.clientId ? clientMap.get(task.clientId) : undefined,
-        };
-        currentPeople[personIndex].tasks.push(taskWithClientName);
-        if (!task.isCompleted) {
-          currentPeople[personIndex].totalHours += task.duration;
-        }
-      });
-      setPeople(currentPeople);
-      setClients(initialClients);
-    }
-    setIsInitialized(true);
+        allTasks.forEach((task, index) => {
+          const personIndex = index % currentPeople.length;
+          const taskWithClientName = {
+            ...task,
+            clientName: task.clientId ? clientMap.get(task.clientId) : undefined,
+          };
+          currentPeople[personIndex].tasks.push(taskWithClientName);
+          if (!task.isCompleted) {
+            currentPeople[personIndex].totalHours += task.duration;
+          }
+        });
+        setPeople(currentPeople);
+        setClients(initialClients);
+      }
+      setIsInitialized(true);
+    })
+    .catch(error => {
+      console.error('Error loading from backend:', error);
+      setIsInitialized(true);
+    });
   }, []);
 
   useEffect(() => {
-    // Persist state to localStorage whenever it changes
+    // Persist state to backend whenever it changes
     if (isInitialized) {
       try {
-        window.localStorage.setItem('task-allocator-people', JSON.stringify(people));
-        window.localStorage.setItem('task-allocator-clients', JSON.stringify(clients));
+        fetch('/.netlify/functions/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': 'default-user'
+          },
+          body: JSON.stringify({ people, clients })
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error saving to backend:', error));
       } catch (error) {
-        console.error('Error al guardar el estado en localStorage:', error);
+        console.error('Error saving state to backend:', error);
       }
     }
   }, [people, clients, isInitialized]);
