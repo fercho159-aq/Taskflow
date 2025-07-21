@@ -53,7 +53,12 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === 'GET') {
       try {
-        // Obtener tareas y clientes del usuario
+        // Obtener usuarios, tareas y clientes
+        const users = await sql`
+          SELECT * FROM users
+          ORDER BY id;
+        `
+
         const tasks = await sql`
           SELECT * FROM tasks
           WHERE user_id = ${userId}
@@ -67,16 +72,23 @@ export const handler: Handler = async (event) => {
         `
 
         // Transformar los datos al formato esperado por el frontend
-        const people = [
-          { id: '1', name: 'Omar', clientIds: ['client-1', 'client-2'], tasks: [], totalHours: 0 },
-          { id: '2', name: 'Fernando', clientIds: ['client-3'], tasks: [], totalHours: 0 },
-          { id: '3', name: 'Julio', clientIds: ['client-1', 'client-4'], tasks: [], totalHours: 0 }
-        ].map(person => {
-          const personTasks = tasks.filter(t => t.assigned_to === person.id)
+        const people = users.map(person => {
+          const personTasks = tasks.filter(t => t.assigned_to === person.id).map(t => ({
+            id: t.id,
+            description: t.description,
+            duration: t.duration,
+            isCompleted: t.is_completed,
+            clientId: t.client_id,
+            clientName: t.client_name,
+            tags: t.tags || []
+          }))
+          
           return {
-            ...person,
+            id: person.id,
+            name: person.name,
+            clientIds: person.client_ids || [],
             tasks: personTasks,
-            totalHours: personTasks.reduce((sum, t) => sum + (t.is_completed ? 0 : t.duration), 0)
+            totalHours: personTasks.reduce((sum, t) => sum + (t.isCompleted ? 0 : t.duration), 0)
           }
         })
 
