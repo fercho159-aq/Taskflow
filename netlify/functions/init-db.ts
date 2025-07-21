@@ -45,7 +45,7 @@ export const handler: Handler = async (event) => {
         id TEXT PRIMARY KEY,
         user_id TEXT REFERENCES users(id),
         description TEXT,
-        duration INTEGER,
+        duration NUMERIC,
         is_completed BOOLEAN DEFAULT FALSE,
         client_id TEXT,
         client_name TEXT,

@@ -1,4 +1,16 @@
-import { Handler } from '@netlify/functions'
+import { Handler } from '@n      CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id),
+      description TEXT,
+      duration NUMERIC,
+      is_completed BOOLEAN DEFAULT FALSE,
+      client_id TEXT,
+      client_name TEXT,
+      tags TEXT[],
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      due_date TIMESTAMP WITH TIME ZONE,
+      assigned_to TEXT REFERENCES users(id)
+    );ons'
 import { neon } from '@netlify/neon'
 import { calculateDueDate } from './utils'
 import type { Client, Task, Person, RequestData } from './types'
