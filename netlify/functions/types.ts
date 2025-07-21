@@ -17,6 +17,8 @@ export interface Person {
   id: string;
   name: string;
   tasks: Task[];
+  totalHours: number;
+  clientIds: string[];
 }
 
 export interface RequestData {

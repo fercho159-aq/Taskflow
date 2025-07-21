@@ -40,6 +40,7 @@ export function TaskAllocator() {
     fetch('/.netlify/functions/tasks', {
       headers: {
         'x-user-id': '1' // ID de Omar
+        
       }
     })
     .then(response => response.json())

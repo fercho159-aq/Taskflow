@@ -99,19 +99,22 @@ export const handler: Handler = async (event) => {
           const personTasks = tasks.filter((t: Record<string, any>) => t.assigned_to === person.id).map((t: Record<string, any>) => ({
             id: t.id,
             description: t.description,
-            duration: t.duration,
+            duration: Number(t.duration) || 0,
             isCompleted: t.is_completed,
             clientId: t.client_id,
             clientName: t.client_name,
-            tags: t.tags || []
-          }))
+            tags: Array.isArray(t.tags) ? t.tags : []
+          }));
+          
+          const clientIds = Array.isArray(person.client_ids) ? person.client_ids : [];
+          const totalHours = personTasks.reduce((sum, t) => sum + (!t.isCompleted ? Number(t.duration) || 0 : 0), 0);
           
           return {
             id: person.id,
             name: person.name,
-            clientIds: person.client_ids || [],
+            clientIds,
             tasks: personTasks,
-            totalHours: personTasks.reduce((sum, t) => sum + (t.isCompleted ? 0 : t.duration), 0)
+            totalHours
           }
         })
 
