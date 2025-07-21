@@ -6,57 +6,52 @@ import type { Client, Task, Person, RequestData } from './types'
 // Inicializar la conexión a la base de datos
 const sql = neon(process.env.NETLIFY_DATABASE_URL)
 
-// Asegurarnos de que las tablas existen
-async function initializeTables() {
-  try {
-    await sql`
-      DROP TABLE IF EXISTS tasks CASCADE;
-      DROP TABLE IF EXISTS clients CASCADE;
-      DROP TABLE IF EXISTS users CASCADE;
-    `;
+// Definir la función para inicializar tablas
+async function initializeTables(sql: any) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      name TEXT
+    )
+  `;
 
-    await sql`
-      CREATE TABLE users (
-        id TEXT PRIMARY KEY,
-        name TEXT
-      )
-    `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS clients (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      user_id TEXT REFERENCES users(id),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
 
-    await sql`
-      CREATE TABLE clients (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        user_id TEXT REFERENCES users(id),
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-
-    await sql`
-      CREATE TABLE tasks (
-        id TEXT PRIMARY KEY,
-        user_id TEXT REFERENCES users(id),
-        description TEXT,
-        duration INTEGER,
-        is_completed BOOLEAN DEFAULT FALSE,
-        client_id TEXT,
-        client_name TEXT,
-        tags TEXT[],
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        due_date TIMESTAMP WITH TIME ZONE,
-        assigned_to TEXT REFERENCES users(id)
-      )
-    `
-    console.log('Tables initialized successfully')
-  } catch (error) {
-    console.error('Error initializing tables:', error)
-  }
+  await sql`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id),
+      description TEXT,
+      duration INTEGER,
+      is_completed BOOLEAN DEFAULT FALSE,
+      client_id TEXT,
+      client_name TEXT,
+      tags TEXT[],
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      due_date TIMESTAMP WITH TIME ZONE,
+      assigned_to TEXT REFERENCES users(id)
+    )
+  `;
+  
+  console.log('Tables initialized successfully');
 }
-
-// Inicializar tablas al arrancar la función
-initializeTables()
 
 export const handler: Handler = async (event) => {
   try {
+    // Initialize tables if they don't exist
+    try {
+      await initializeTables(sql);
+    } catch (error) {
+      console.error('Error initializing tables:', error);
+    }
+
     const userId = event.headers['x-user-id'];
     if (!userId) {
       return {
