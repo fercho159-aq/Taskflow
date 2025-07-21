@@ -79,20 +79,41 @@ export function TaskAllocator() {
   useEffect(() => {
     // Persist state to backend whenever it changes
     if (isInitialized) {
-      try {
-        fetch('/.netlify/functions/tasks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': 'default-user'
-          },
-          body: JSON.stringify({ people, clients })
-        })
-        .then(response => response.json())
-        .catch(error => console.error('Error saving to backend:', error));
-      } catch (error) {
-        console.error('Error saving state to backend:', error);
-      }
+      const saveState = async () => {
+        try {
+          const response = await fetch('/.netlify/functions/tasks', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-id': 'default-user'
+            },
+            body: JSON.stringify({ 
+              people: people.map(p => ({
+                ...p,
+                tasks: p.tasks.map(t => ({
+                  ...t,
+                  duration: Number(t.duration) || 0,
+                  isCompleted: Boolean(t.isCompleted),
+                  tags: Array.isArray(t.tags) ? t.tags : []
+                }))
+              })),
+              clients 
+            })
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Error saving data');
+          }
+
+          const result = await response.json();
+          console.log('Data saved successfully:', result);
+        } catch (error) {
+          console.error('Error saving state to backend:', error);
+        }
+      };
+
+      saveState();
     }
   }, [people, clients, isInitialized]);
 

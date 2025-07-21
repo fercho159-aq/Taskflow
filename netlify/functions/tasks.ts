@@ -105,50 +105,57 @@ export const handler: Handler = async (event) => {
     if (event.httpMethod === 'POST' && event.body) {
       try {
         const data = JSON.parse(typeof event.body === 'string' ? event.body : event.body);
-        console.log('Received data:', data);
+        console.log('Received data:', JSON.stringify(data, null, 2));
+
+        // Validate data structure
+        if (!data.people || !Array.isArray(data.people)) {
+          throw new Error('Invalid data structure: people array is required');
+        }
 
         // Primero, asegurarse de que el usuario existe
         await sql`
-          INSERT INTO users (id)
-          VALUES (${userId})
+          INSERT INTO users (id, name)
+          VALUES (${userId}, ${userId})
           ON CONFLICT (id) DO NOTHING;
         `;
         
-        // Actualizar clientes
-        if (data.clients?.length > 0) {
-          console.log('Updating clients:', data.clients);
-          for (const client of data.clients) {
-            try {
+        // Begin transaction
+        await sql`BEGIN`;
+        
+        try {
+          // Actualizar clientes
+          const clientsToUpdate = (data.clients || []).filter(c => c && c.id && c.name);
+          if (clientsToUpdate.length > 0) {
+            console.log('Updating clients:', clientsToUpdate.length);
+            for (const client of clientsToUpdate) {
               await sql`
                 INSERT INTO clients (id, name, user_id)
                 VALUES (${client.id}, ${client.name}, ${userId})
                 ON CONFLICT (id) DO UPDATE SET
-                  name = EXCLUDED.name,
-                  user_id = EXCLUDED.user_id;
+                  name = EXCLUDED.name;
               `;
-              console.log('Client updated:', client.id);
-            } catch (error) {
-              console.error('Error updating client:', client.id, error);
-              throw error;
             }
           }
-        }
 
-        // Actualizar tareas
-        if (data.people) {
-          console.log('Processing tasks for people:', data.people);
-          
-          // Primero, borrar todas las tareas existentes del usuario
-          await sql`
-            DELETE FROM tasks 
-            WHERE user_id = ${userId};
-          `;
+          // Actualizar tareas
+          if (data.people && data.people.length > 0) {
+            console.log('Processing tasks for people:', data.people.length);
+            
+            // Borrar solo las tareas del usuario que vamos a actualizar
+            const personIds = data.people.map(p => p.id).filter(Boolean);
+            if (personIds.length > 0) {
+              await sql`
+                DELETE FROM tasks 
+                WHERE user_id = ${userId}
+                AND assigned_to = ANY(${personIds});
+              `;
+            }
 
-          for (const person of data.people) {
-            if (Array.isArray(person.tasks)) {
-              for (const task of person.tasks) {
-                try {
-                  console.log('Creating task:', task);
+            // Insertar las nuevas tareas
+            for (const person of data.people) {
+              if (person && person.id && Array.isArray(person.tasks)) {
+                const validTasks = person.tasks.filter(t => t && t.id && t.description);
+                for (const task of validTasks) {
                   await sql`
                     INSERT INTO tasks (
                       id, description, duration, is_completed, 
@@ -156,8 +163,8 @@ export const handler: Handler = async (event) => {
                     )
                     VALUES (
                       ${task.id}, 
-                      ${task.description}, 
-                      ${Number(task.duration) || 0}, 
+                      ${task.description || ''}, 
+                      ${Math.max(0, Number(task.duration) || 0)}, 
                       ${Boolean(task.isCompleted)}, 
                       ${task.clientId || null}, 
                       ${task.clientName || null}, 
@@ -166,14 +173,19 @@ export const handler: Handler = async (event) => {
                       ${person.id}
                     );
                   `;
-                  console.log('Task created:', task.id);
-                } catch (error) {
-                  console.error('Error creating task:', task.id, error);
-                  throw error;
                 }
               }
             }
           }
+
+          // Commit transaction
+          await sql`COMMIT`;
+          console.log('Transaction committed successfully');
+        } catch (error) {
+          // Rollback transaction on error
+          await sql`ROLLBACK`;
+          console.error('Transaction rolled back due to error:', error);
+          throw error;
         }
         
         return {
