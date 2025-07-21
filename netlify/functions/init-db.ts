@@ -25,25 +25,7 @@ export const handler: Handler = async (event) => {
     await sql`
       CREATE TABLE users (
         id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        client_ids TEXT[]
-      )
-    `
-
-    // Crear tabla de tareas
-    await sql`
-      CREATE TABLE tasks (
-        id TEXT PRIMARY KEY,
-        description TEXT NOT NULL,
-        duration INTEGER NOT NULL,
-        is_completed BOOLEAN DEFAULT FALSE,
-        client_id TEXT,
-        client_name TEXT,
-        tags TEXT[],
-        assigned_to TEXT,
-        user_id TEXT,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        due_date TIMESTAMP WITH TIME ZONE
+        name TEXT
       )
     `
 
@@ -52,23 +34,40 @@ export const handler: Handler = async (event) => {
       CREATE TABLE clients (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        user_id TEXT,
+        user_id TEXT REFERENCES users(id),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
+    // Crear tabla de tareas
+    await sql`
+      CREATE TABLE tasks (
+        id TEXT PRIMARY KEY,
+        user_id TEXT REFERENCES users(id),
+        description TEXT,
+        duration INTEGER,
+        is_completed BOOLEAN DEFAULT FALSE,
+        client_id TEXT,
+        client_name TEXT,
+        tags TEXT[],
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        due_date TIMESTAMP WITH TIME ZONE,
+        assigned_to TEXT REFERENCES users(id)
       )
     `
 
     // Insertar usuarios iniciales
     const initialUsers = [
-      { id: '1', name: 'Omar', clientIds: ['client-1', 'client-2'] },
-      { id: '2', name: 'Fernando', clientIds: ['client-3'] },
-      { id: '3', name: 'Julio', clientIds: ['client-1', 'client-4'] }
+      { id: '1', name: 'Omar' },
+      { id: '2', name: 'Fernando' },
+      { id: '3', name: 'Julio' }
     ]
 
     // Insertar usuarios
     for (const user of initialUsers) {
       await sql`
-        INSERT INTO users (id, name, client_ids)
-        VALUES (${user.id}, ${user.name}, ${user.clientIds})
+        INSERT INTO users (id, name)
+        VALUES (${user.id}, ${user.name})
       `
     }
 
