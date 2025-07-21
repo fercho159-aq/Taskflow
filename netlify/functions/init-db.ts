@@ -3,6 +3,7 @@ import { neon } from '@netlify/neon'
 import initialPendingTasks from '../../src/data/pending-tasks.json'
 import initialResolvedTasks from '../../src/data/resolved-tasks.json'
 import initialClients from '../../src/data/clients.json'
+import { calculateDueDate } from './utils'
 
 const sql = neon(process.env.NETLIFY_DATABASE_URL)
 
@@ -41,7 +42,8 @@ export const handler: Handler = async (event) => {
         tags TEXT[],
         assigned_to TEXT,
         user_id TEXT,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        due_date TIMESTAMP WITH TIME ZONE
       )
     `
 
@@ -84,11 +86,12 @@ export const handler: Handler = async (event) => {
       const personIndex = i % 3;
       const assignedTo = (personIndex + 1).toString();
       const client = initialClients.find(c => c.id === task.clientId);
+      const dueDate = calculateDueDate(task.duration);
 
       await sql`
         INSERT INTO tasks (
           id, description, duration, is_completed,
-          client_id, client_name, tags, assigned_to, user_id
+          client_id, client_name, tags, assigned_to, user_id, due_date
         )
         VALUES (
           ${task.id},
@@ -99,7 +102,8 @@ export const handler: Handler = async (event) => {
           ${client?.name},
           ${[]},
           ${assignedTo},
-          ${'default-user'}
+          ${'default-user'},
+          ${dueDate}
         )
       `
     }
@@ -110,11 +114,12 @@ export const handler: Handler = async (event) => {
       const personIndex = i % 3;
       const assignedTo = (personIndex + 1).toString();
       const client = initialClients.find(c => c.id === task.clientId);
+      const dueDate = calculateDueDate(task.duration);
 
       await sql`
         INSERT INTO tasks (
           id, description, duration, is_completed,
-          client_id, client_name, tags, assigned_to, user_id
+          client_id, client_name, tags, assigned_to, user_id, due_date
         )
         VALUES (
           ${task.id},
@@ -125,7 +130,8 @@ export const handler: Handler = async (event) => {
           ${client?.name},
           ${[]},
           ${assignedTo},
-          ${'default-user'}
+          ${'default-user'},
+          ${dueDate}
         )
       `
     }
