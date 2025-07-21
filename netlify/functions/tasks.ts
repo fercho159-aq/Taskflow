@@ -8,22 +8,25 @@ const sql = neon(process.env.NETLIFY_DATABASE_URL)
 // Asegurarnos de que las tablas existen
 async function initializeTables() {
   try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY
-      );
-
-      CREATE TABLE IF NOT EXISTS tasks (
-        id TEXT PRIMARY KEY,
-        user_id TEXT REFERENCES users(id),
-        description TEXT,
-        duration INTEGER,
-        is_completed BOOLEAN DEFAULT FALSE,
-        client_id TEXT,
-        client_name TEXT,
-        tags TEXT[],
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        due_date TIMESTAMP WITH TIME ZONE
+    await sql`CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT)`;
+    await sql`CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id),
+      description TEXT,
+      duration INTEGER,
+      is_completed BOOLEAN DEFAULT FALSE,
+      client_id TEXT,
+      client_name TEXT,
+      tags TEXT[],
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      due_date TIMESTAMP WITH TIME ZONE
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS clients (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      user_id TEXT REFERENCES users(id),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`;
       );
 
       CREATE TABLE IF NOT EXISTS clients (
